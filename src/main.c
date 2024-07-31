@@ -17,7 +17,9 @@ int main(int argc, char ** argv)
 
     htrie_load_wordlist(p_htrie, "words_alpha.txt");
 
-    htrie_get_words(p_htrie, "abac", 4);
+    // htrie_get_words(p_htrie, "abac", 4);
+
+    htrie_autotyper(p_htrie);
 
     htrie_destroy(p_htrie);
 

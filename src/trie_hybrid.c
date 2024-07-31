@@ -6,6 +6,7 @@
  * 
  */
 
+#include <curses.h>
 #include <stdbool.h>
 #include <stdbool.h>
 #include <errno.h>
@@ -13,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
+#include <ncurses.h>
 #include "../include/trie_hybrid.h"
 
 recs_cll_t * gp_recommends = NULL;
@@ -331,7 +332,7 @@ static void htrie_get_cnode_words(htrie_cnode_t * p_cnode, \
 
     if (POPULARITY_NOT_WORD != p_cnode->popularity)
     {
-        printf("%s\n", prefix_buff);
+        // printf("%s\n", prefix_buff);
         recs_ll_insert(gp_recommends, prefix_buff, p_cnode->popularity);
     }
 
@@ -402,7 +403,7 @@ static void htrie_get_dnode_words(void * p_node,    \
 
         if (POPULARITY_NOT_WORD != p_tnode->popularity)
         {
-            printf("%s\n", prefix_buff);
+            // printf("%s\n", prefix_buff);
             recs_ll_insert(gp_recommends, prefix_buff, p_tnode->popularity);
 
         }
@@ -428,7 +429,7 @@ static void htrie_get_dnode_words(void * p_node,    \
 
                 if (POPULARITY_NOT_WORD != p_dnode->popularity)
                 {
-                    printf("%s\n", prefix_buff);
+                    // printf("%s\n", prefix_buff);
                     recs_ll_insert(gp_recommends, prefix_buff, \
                         p_dnode->popularity);
 
@@ -556,12 +557,128 @@ int8_t htrie_get_words(htrie_t * p_htrie, char * p_prefix, uint8_t max_depth)
         
     }
 
-    printf("DEBUG: htrie get_words_fin. dumping recommended words.\n");
     recs_ll_print(gp_recommends);
 
     return 0;
 
 }
+
+
+// The problem is we don't know the current node TYPE.
+// Do we add the word to the buffer before or after?
+// BEFORE. 
+
+void * htrie_node_get_next(htrie_dnode_t * p_curr, \
+                    char      next,                 \
+                    char    * p_prefix_buff,        \
+                    uint8_t   prefix_len,           \
+                    uint8_t   max_depth)
+{
+
+    if ((NULL == p_curr) || (NULL == p_prefix_buff))
+    {
+        return NULL;
+    }
+
+    void * p_ret  = NULL;
+    uint8_t depth = prefix_len;
+
+    // Just check to see if it has it or no. Add it if so.
+
+    if (DEFAULT_HTRIE_DEPTH > depth)
+    {
+        // p_curr is a dnode
+        //
+        p_ret = p_curr->p_children[next - ASCII_PRINT_START];
+
+        if (NULL != p_ret)
+        {
+            p_prefix_buff[prefix_len] = next;
+            p_prefix_buff[prefix_len + 1] = '\0';
+        }
+
+        return p_ret;
+
+    }
+
+    else if (DEFAULT_HTRIE_DEPTH == depth)
+    {
+        htrie_tnode_t * p_tnode = (htrie_tnode_t *) p_curr;
+
+        p_ret = p_tnode->p_children[next - ASCII_PRINT_START];
+
+        if (NULL != p_ret)
+        {
+            p_prefix_buff[prefix_len] = next;
+            p_prefix_buff[prefix_len + 1] = '\0';
+        }
+
+        return p_ret;
+    }
+
+    else 
+    {
+        htrie_cnode_t * p_cnode = (htrie_cnode_t *) p_curr;
+
+        for (uint8_t ind = 0; ind < p_cnode->num_children; ind++)
+        {
+            if (next == p_cnode->p_children[ind].character)
+            {
+
+                p_ret = &p_cnode->p_children[ind];
+                p_prefix_buff[prefix_len] = next;
+                p_prefix_buff[prefix_len + 1] = '\0';
+                break;
+            }
+        }
+
+        return p_ret;
+    }
+}
+
+
+
+static void htrie_fill_recsll(void * p_curr, 
+                            char * p_prefix, 
+                            uint8_t prefix_len, 
+                            uint8_t max_depth)
+{
+
+    if ((NULL == p_curr) || (NULL == p_prefix))
+    {
+        return;
+    }
+
+    uint8_t depth = prefix_len;
+
+    if (DEFAULT_HTRIE_DEPTH == depth)
+    {
+        htrie_get_tnode_words((htrie_tnode_t *) p_curr, \
+            p_prefix, prefix_len, max_depth);
+    }
+
+    else if (DEFAULT_HTRIE_DEPTH > depth)
+    {
+        char prefix_buff[MAX_WORD_LENGTH] = {0};
+        strncpy(prefix_buff, p_prefix, prefix_len);
+
+        htrie_get_dnode_words((htrie_dnode_t *) p_curr, \
+            prefix_buff, depth, depth, max_depth);
+    }
+
+    else 
+    {
+        char prefix_buff[MAX_WORD_LENGTH] = {0};
+        strncpy(prefix_buff, p_prefix, prefix_len);
+
+        htrie_get_cnode_words((htrie_cnode_t *) p_curr, \
+            prefix_buff, depth, max_depth, 0);
+    }
+
+    return;
+
+}
+
 
 
 // Loads a trie from a newline separated wordlist
@@ -610,10 +727,141 @@ int8_t htrie_load_wordlist(htrie_t * p_htrie, char * p_wordlist_path)
 
     }
 
-
     fclose(p_wordlist);
     p_wordlist = NULL;
 
     return 0;
 
 }
+
+static void htrie_update_node_popularity(void * p_node, uint8_t depth)
+{
+    if (NULL == p_node)
+    {
+        return;
+    }
+
+    float * p_old_popularity = NULL;
+
+    if (DEFAULT_HTRIE_DEPTH > depth)
+    {
+        p_old_popularity = &((htrie_dnode_t *) p_node)->popularity;
+    }
+
+    else if (DEFAULT_HTRIE_DEPTH == depth)
+    {
+        p_old_popularity = &((htrie_tnode_t *) p_node)->popularity;
+    }
+
+    else 
+    {
+        p_old_popularity = &((htrie_cnode_t *) p_node)->popularity;
+    }
+
+    if (NULL != p_old_popularity)
+    {
+        if (POPULARITY_NOT_WORD == *p_old_popularity)
+        {
+            *p_old_popularity = POPULARITY_WORD;
+        }
+
+        else 
+        {
+            *p_old_popularity *= GAMMA;
+        }
+    }
+}
+
+
+// Autotyper to read from stdin
+//
+void htrie_autotyper(htrie_t * p_htrie)
+{
+
+    if ((NULL == p_htrie) || (NULL == p_htrie->p_root))
+    {
+        return;
+    }
+
+    char word_buff[MAX_WORD_LENGTH] = {0};
+
+    uint8_t len    = 0;
+    char    letter = '\0';
+    int     row    = 0;
+    int     col    = 0;
+
+    void * p_curr   = p_htrie->p_root;
+    bool   b_found  = true;
+
+    initscr();
+
+    while (true) 
+    {
+        
+        letter = getch();
+
+        if ((' ' == letter) || ('\n') == letter)
+        {
+            word_buff[len] = '\0';
+
+            if (false == b_found)
+            {
+                htrie_insert(p_htrie, word_buff);
+            }
+
+            else 
+            {
+                htrie_update_node_popularity(p_curr, len);
+            }
+
+            // Reset for next go around
+            //
+            len = 0;
+            b_found = true;
+            p_curr = p_htrie->p_root;
+            recs_ll_clear(gp_recommends);
+            continue;
+        }
+
+        if (true == b_found)
+        {
+
+            p_curr = htrie_node_get_next(p_curr,   \
+                                        letter,     \
+                                        word_buff,  \
+                                        len,        \
+                                        DEFAULT_MAX_DEPTH);
+
+            if (NULL == p_curr)
+            {
+                b_found = false;
+                word_buff[len] = letter;
+            }
+
+            else 
+            {
+                // We need to print recommendations now.
+                //
+                word_buff[len] = letter;
+
+                recs_ll_clear(gp_recommends);
+                htrie_fill_recsll(p_curr, word_buff, len+1, DEFAULT_MAX_DEPTH);
+                recs_ll_print(gp_recommends);
+
+            }
+
+            len++;
+        }
+
+        else 
+        {
+            word_buff[len] = letter;
+            len++;
+        }
+
+    }
+
+    endwin();
+
+}
+

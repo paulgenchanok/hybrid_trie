@@ -25,3 +25,5 @@ int8_t htrie_load_wordlist(htrie_t * p_htrie, char * p_wordlist_path);
 void htrie_destroy(htrie_t * p_htrie);
 
 int8_t htrie_get_words(htrie_t * p_htrie, char * p_prefix, uint8_t max_depth);
+
+void htrie_autotyper(htrie_t * p_htrie);

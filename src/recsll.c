@@ -6,11 +6,13 @@
  * 
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <ncurses.h>
 #include "../include/recsll.h"
 
 /*!
@@ -109,8 +111,6 @@ void recs_ll_dequeue(recs_cll_t * p_recsll)
 
 }
 
-
-
 void recs_ll_insert(recs_cll_t * p_recsll, char * p_word, float popularity)
 {
     if ((NULL == p_recsll) || (NULL == p_word))
@@ -129,10 +129,24 @@ void recs_ll_insert(recs_cll_t * p_recsll, char * p_word, float popularity)
     rec_word_t * p_curr   = p_recsll->p_first;
     uint8_t      word_len = strlen(p_word);
     bool         b_hit    = false;
+    bool         b_dup    = false;
     uint8_t      ind      = 0;
 
     for (ind = 0; ind < p_recsll->num_words; ind++)
     {
+
+        if (word_len == p_curr->word_len)
+        {
+
+            int cmp = strncmp(p_curr->word, p_word, word_len);
+
+            if (cmp == 0)
+            {
+                b_dup = true;
+                break;
+            }
+
+        }
 
         if (p_curr->popularity < popularity)
         {
@@ -151,11 +165,10 @@ void recs_ll_insert(recs_cll_t * p_recsll, char * p_word, float popularity)
             // The very last element
             //
             strncpy(p_curr->word, p_word, word_len);
-            p_curr->word[word_len] = '\0';
-            p_curr->popularity = popularity;
+            p_curr->word[word_len]   = '\0';
+            p_curr->word_len         = word_len;
+            p_curr->popularity       = popularity;
             p_recsll->popularity_min = popularity;
-            printf("updating last: %s\n", p_word);
-
         }
 
         else 
@@ -165,9 +178,10 @@ void recs_ll_insert(recs_cll_t * p_recsll, char * p_word, float popularity)
 
             rec_word_t * p_prior = p_curr->p_prev;
             rec_word_t * p_new   = rec_word_create();
-
             p_new->popularity    = popularity;
+            p_new->word_len      = word_len;
             strncpy(p_new->word, p_word, word_len);
+
             // Already null terminated.
             p_prior->p_next = p_new;
             p_new->p_prev   = p_prior;
@@ -184,12 +198,13 @@ void recs_ll_insert(recs_cll_t * p_recsll, char * p_word, float popularity)
 
     }
 
-    if (NUM_RECOMMENDS > p_recsll->num_words)
+    if ((NUM_RECOMMENDS > p_recsll->num_words) && (false == b_dup))
     {
 
         strncpy(p_curr->word, p_word, word_len);
         p_curr->word[word_len] = '\0';
-        p_curr->popularity = popularity;
+        p_curr->word_len       = word_len;
+        p_curr->popularity     = popularity;
         p_recsll->num_words++;
 
     }
@@ -206,13 +221,32 @@ void recs_ll_print(recs_cll_t * p_recsll)
     uint8_t      ind    = 0;
     rec_word_t * p_curr = p_recsll->p_first;
 
+    int row = 0;
+    int col = 0;
+
+    getyx(stdscr, row, col);
+    move(row + 1, 0);
+    clrtoeol();
+
     for (uint8_t ind = 0; ind < p_recsll->num_words; ind++)
     {
-
-        printf("%s. %f\n", p_curr->word, p_curr->popularity);
+        printw("%s ", p_curr->word);
         p_curr = p_curr->p_next;
     }
 
+    move(row, col);
+
+}
+
+void recs_ll_clear(recs_cll_t * p_recsll)
+{
+    if (NULL == p_recsll)
+    {
+        return;
+    }
+
+    p_recsll->num_words = 0;
+    p_recsll->popularity_min = 0;
 }
 
 void recs_ll_destroy(recs_cll_t * p_recsll)
@@ -235,5 +269,50 @@ void recs_ll_destroy(recs_cll_t * p_recsll)
 
     free(p_recsll);
     p_recsll = NULL;
+
+}
+
+
+rec_array_t * rec_array_create()
+{
+
+    rec_array_t * p_new = calloc(1, sizeof(rec_array_t));
+    check_alloc(p_new, "rec array create", true);
+
+    return p_new;
+}
+
+void rec_array_destroy(rec_array_t * p_rat)
+{
+
+    if (NULL == p_rat)
+    {
+        return;
+    }
+
+    free(p_rat);
+    p_rat = NULL;
+
+}
+
+// static void rec_array_insert_len(rec_array_t * p_rat, char * p_word)
+// {
+
+//     uint8_t word_len = strlen(p_word);
+
+//     for (uint8_t ind = 0; ind < NUM_RECOMMENDS; ind++)
+//     {
+
+//     }
+
+// }
+
+
+
+void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity)
+{
+
+
+
 
 }
