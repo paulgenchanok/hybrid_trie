@@ -41,6 +41,7 @@ typedef struct _word {
 
     uint8_t word_len;
     char    word[MAX_WORD_LENGTH];
+    float   popularity;
 
 } word_t;
 
@@ -48,7 +49,6 @@ typedef struct _rec_array {
 
     word_t  word_array[NUM_RECOMMENDS];
     uint8_t num_words;
-    uint8_t min_len;
     float   min_popularity;
 
 } rec_array_t;
