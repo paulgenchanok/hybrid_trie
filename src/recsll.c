@@ -297,17 +297,6 @@ void rec_array_destroy(rec_array_t * p_rat)
 
 }
 
-// static void rec_array_insert_len(rec_array_t * p_rat, char * p_word)
-// {
-
-//     uint8_t word_len = strlen(p_word);
-
-//     for (uint8_t ind = 0; ind < NUM_RECOMMENDS; ind++)
-//     {
-
-//     }
-
-// }
 
 void rec_array_clear(rec_array_t * p_rat)
 {

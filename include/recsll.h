@@ -69,3 +69,15 @@ void recs_ll_print(recs_cll_t * p_recsll);
 void recs_ll_clear(recs_cll_t * p_recsll);
 
 void recs_ll_destroy(recs_cll_t * p_recsll);
+
+rec_array_t * rec_array_create();
+
+void rec_array_destroy(rec_array_t * p_rat);
+
+void rec_array_clear(rec_array_t * p_rat);
+
+void rec_array_dequeue(rec_array_t * p_rat, uint8_t index);
+
+void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity);
+
+void rec_array_print(rec_array_t * p_rat);
