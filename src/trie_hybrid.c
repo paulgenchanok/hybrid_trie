@@ -17,7 +17,7 @@
 #include <ncurses.h>
 #include "../include/trie_hybrid.h"
 
-recs_cll_t * gp_recommends = NULL;
+rec_array_t * gp_recommends = NULL;
 
 /*!
  * @brief Checks if memory allocation is successful. This can be applied
@@ -52,7 +52,7 @@ htrie_t * htrie_create()
     //
     p_new->p_root = htrie_create_dnode(); 
 
-    gp_recommends = recs_ll_create();
+    gp_recommends = rec_array_create();
 
     return p_new;
 
@@ -71,7 +71,7 @@ void htrie_destroy(htrie_t * p_htrie)
     free(p_htrie);
     p_htrie = NULL;
 
-    recs_ll_destroy(gp_recommends);
+    rec_array_destroy(gp_recommends);
     gp_recommends = NULL;
 
 }
@@ -333,7 +333,7 @@ static void htrie_get_cnode_words(htrie_cnode_t * p_cnode, \
     if (POPULARITY_NOT_WORD != p_cnode->popularity)
     {
         // printf("%s\n", prefix_buff);
-        recs_ll_insert(gp_recommends, prefix_buff, p_cnode->popularity);
+        rec_array_insert(gp_recommends, prefix_buff, p_cnode->popularity);
     }
 
     for (uint8_t ind = 0; ind < p_cnode->num_children; ind++)
@@ -404,7 +404,7 @@ static void htrie_get_dnode_words(void * p_node,    \
         if (POPULARITY_NOT_WORD != p_tnode->popularity)
         {
             // printf("%s\n", prefix_buff);
-            recs_ll_insert(gp_recommends, prefix_buff, p_tnode->popularity);
+            rec_array_insert(gp_recommends, prefix_buff, p_tnode->popularity);
 
         }
 
@@ -430,7 +430,7 @@ static void htrie_get_dnode_words(void * p_node,    \
                 if (POPULARITY_NOT_WORD != p_dnode->popularity)
                 {
                     // printf("%s\n", prefix_buff);
-                    recs_ll_insert(gp_recommends, prefix_buff, \
+                    rec_array_insert(gp_recommends, prefix_buff, \
                         p_dnode->popularity);
 
                 }
@@ -557,7 +557,7 @@ int8_t htrie_get_words(htrie_t * p_htrie, char * p_prefix, uint8_t max_depth)
         
     }
 
-    recs_ll_print(gp_recommends);
+    rec_array_print(gp_recommends);
 
     return 0;
 
@@ -772,6 +772,18 @@ static void htrie_update_node_popularity(void * p_node, uint8_t depth)
     }
 }
 
+static void htrie_clear_rec_line()
+{
+    int row = 0;
+    int col = 0;
+
+    getyx(stdscr, row, col);
+    move(row + 1, 0);
+    clrtoeol();
+    move(row, col);
+
+}
+
 
 // Autotyper to read from stdin
 //
@@ -785,13 +797,10 @@ void htrie_autotyper(htrie_t * p_htrie)
 
     char word_buff[MAX_WORD_LENGTH] = {0};
 
-    uint8_t len    = 0;
-    char    letter = '\0';
-    int     row    = 0;
-    int     col    = 0;
-
-    void * p_curr   = p_htrie->p_root;
-    bool   b_found  = true;
+    uint8_t len      = 0;
+    char    letter   = '\0';
+    void  * p_curr   = p_htrie->p_root;
+    bool    b_found  = true;
 
     initscr();
 
@@ -819,7 +828,10 @@ void htrie_autotyper(htrie_t * p_htrie)
             len = 0;
             b_found = true;
             p_curr = p_htrie->p_root;
-            recs_ll_clear(gp_recommends);
+            rec_array_clear(gp_recommends);
+
+            htrie_clear_rec_line();
+
             continue;
         }
 
@@ -834,6 +846,9 @@ void htrie_autotyper(htrie_t * p_htrie)
 
             if (NULL == p_curr)
             {
+
+                htrie_clear_rec_line();
+
                 b_found = false;
                 word_buff[len] = letter;
             }
@@ -843,10 +858,10 @@ void htrie_autotyper(htrie_t * p_htrie)
                 // We need to print recommendations now.
                 //
                 word_buff[len] = letter;
+                rec_array_clear(gp_recommends);
 
-                recs_ll_clear(gp_recommends);
                 htrie_fill_recsll(p_curr, word_buff, len+1, DEFAULT_MAX_DEPTH);
-                recs_ll_print(gp_recommends);
+                rec_array_print(gp_recommends);
 
             }
 

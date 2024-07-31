@@ -354,15 +354,15 @@ void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity)
     uint8_t ind      = 0;
     bool    b_hit    = false;
 
-    word_t curr; // maybe should be a pointer? I'll know when it segfaults.
+    word_t * p_curr = NULL; // maybe should be a pointer? I'll know when it segfaults.
 
     for (; ind < NUM_RECOMMENDS; ind++)
     {
-        curr = p_rat->word_array[ind];
+        p_curr = &p_rat->word_array[ind];
 
-        if (word_len == curr.word_len)
+        if (word_len == p_curr->word_len)
         {
-            int cmp = strncmp(p_word, curr.word, word_len);
+            int cmp = strncmp(p_word, p_curr->word, word_len);
 
             if (0 == cmp)
             {
@@ -372,7 +372,7 @@ void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity)
             
         }
 
-        if (curr.popularity < popularity)
+        if (p_curr->popularity < popularity)
         {
             // we have our insert index
             b_hit = true;
@@ -390,10 +390,10 @@ void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity)
 
         rec_array_dequeue(p_rat, ind);
 
-        strncpy(curr.word, p_word, word_len);
-        curr.word[word_len] = '\0';
-        curr.popularity = popularity;
-
+        strncpy(p_curr->word, p_word, word_len);
+        p_curr->word[word_len] = '\0';
+        p_curr->popularity = popularity;
+        p_curr->word_len = word_len;
     }    
 
 }
