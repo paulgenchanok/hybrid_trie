@@ -784,8 +784,36 @@ static void htrie_clear_rec_line()
 
 }
 
+void htrie_render(rec_array_t * p_rat, htrie_render_action action)
+{
+    if (NULL == p_rat)
+    {
+        return;
+    }
+
+    switch (action) 
+    {
+        case PRINT:
+            rec_array_print(p_rat);
+        break;
+
+        case CLEAR:
+            rec_array_clear(p_rat);
+            htrie_clear_rec_line();
+        break;
+
+        case CLEAR_LINE:
+            htrie_clear_rec_line();
+        break;
+
+        default:
+        break;
+
+    }
+}
 
 // Autotyper to read from stdin
+// Really need to separate to two functions. An autotyper and a renderer
 //
 void htrie_autotyper(htrie_t * p_htrie)
 {
@@ -828,10 +856,8 @@ void htrie_autotyper(htrie_t * p_htrie)
             len = 0;
             b_found = true;
             p_curr = p_htrie->p_root;
-            rec_array_clear(gp_recommends);
 
-            htrie_clear_rec_line();
-
+            htrie_render(gp_recommends, CLEAR);
             continue;
         }
 
@@ -847,7 +873,7 @@ void htrie_autotyper(htrie_t * p_htrie)
             if (NULL == p_curr)
             {
 
-                htrie_clear_rec_line();
+                htrie_render(gp_recommends, CLEAR_LINE);
 
                 b_found = false;
                 word_buff[len] = letter;
@@ -859,10 +885,9 @@ void htrie_autotyper(htrie_t * p_htrie)
                 //
                 word_buff[len] = letter;
                 rec_array_clear(gp_recommends);
-
                 htrie_fill_recsll(p_curr, word_buff, len+1, DEFAULT_MAX_DEPTH);
-                rec_array_print(gp_recommends);
 
+                htrie_render(gp_recommends, PRINT);
             }
 
             len++;
