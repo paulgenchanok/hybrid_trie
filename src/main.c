@@ -7,15 +7,13 @@
  */
 
 #include "../include/trie_hybrid.h"
-#include <stdlib.h>
-#include <stdio.h>
 
 int main(int argc, char ** argv)
 {
 
     htrie_t * p_htrie = htrie_create();
 
-    htrie_load_wordlist(p_htrie, "words_alpha.txt");
+    htrie_load_wordlist(p_htrie, "t_lower.txt");
 
     // htrie_get_words(p_htrie, "abac", 4);
 
