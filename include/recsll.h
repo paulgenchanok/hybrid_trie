@@ -11,31 +11,6 @@
  #include <stdint.h>
  #include "constants.h"
 
- // YES IT'S A CIRCULARLY LINKED LIST. LET'S GO.
- // how to avoid adding duplicates?
- //
-typedef  struct _rec_word {
-
-    char               word[MAX_WORD_LENGTH];
-    uint8_t            word_len;
-    float              popularity;
-    struct _rec_word * p_next;
-    struct _rec_word * p_prev;
-
-} rec_word_t;
-
-typedef struct _recs_cll {
-
-    rec_word_t * p_first;           // The first word
-    uint8_t      num_words;         // Anything after this is stale
-    float        popularity_min;    // For efficiency
-
-} recs_cll_t;
-
-// Implementing in a ciruclarly linked list is a NIGHTMARE
-// I think I can do it JUST AS WELL with an array. Geez.
-// Need to clear in between each character being typed.
-//
 
 typedef struct _word {
 
@@ -53,22 +28,6 @@ typedef struct _rec_array {
 
 } rec_array_t;
 
-
-rec_word_t * rec_word_create();
-
-void rec_word_destroy(rec_word_t * p_recw);
-
-recs_cll_t * recs_ll_create();
-
-void recs_ll_dequeue(recs_cll_t * p_recsll);
-
-void recs_ll_insert(recs_cll_t * p_recsll, char * p_word, float popularity);
-
-void recs_ll_print(recs_cll_t * p_recsll);
-
-void recs_ll_clear(recs_cll_t * p_recsll);
-
-void recs_ll_destroy(recs_cll_t * p_recsll);
 
 rec_array_t * rec_array_create();
 
