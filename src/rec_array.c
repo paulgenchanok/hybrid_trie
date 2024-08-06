@@ -14,7 +14,7 @@
 #include <string.h>
 #include <ncurses.h>
 #include <sys/types.h>
-#include "../include/recsll.h"
+#include "../include/rec_array.h"
 
 /*!
  * @brief Checks if memory allocation is successful. This can be applied
