@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include "recsll.h"
+#include "rec_array.h"
 #include "htrie_structs.h"
 #include "constants.h"
 

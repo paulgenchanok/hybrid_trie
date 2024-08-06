@@ -638,7 +638,7 @@ void * htrie_node_get_next(htrie_dnode_t * p_curr, \
 
 
 
-static void htrie_fill_recsll(void * p_curr, 
+static void htrie_fill_recs(void * p_curr, 
                             char * p_prefix, 
                             uint8_t prefix_len, 
                             uint8_t max_depth)
@@ -885,7 +885,7 @@ void htrie_autotyper(htrie_t * p_htrie)
                 //
                 word_buff[len] = letter;
                 rec_array_clear(gp_recommends);
-                htrie_fill_recsll(p_curr, word_buff, len+1, DEFAULT_MAX_DEPTH);
+                htrie_fill_recs(p_curr, word_buff, len+1, DEFAULT_MAX_DEPTH);
 
                 htrie_render(gp_recommends, PRINT);
             }
