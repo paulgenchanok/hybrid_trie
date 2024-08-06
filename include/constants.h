@@ -27,6 +27,16 @@
 
 #endif
 
+#ifdef ASCII_azAZ
+
+#define ASCII_AZ_START 65   // A
+#define ASCII_AZ_MIDZ  90   // Z
+#define ASCII_AZ_MIDa  97   // a
+#define ASCII_AZ_END   122  // z
+#define ALPHABET_SIZE  52
+
+#endif
+
 #define GAMMA               1.01    // Learning factor
 
 #define POPULARITY_WORD     0.5     // float
@@ -40,4 +50,7 @@
 #define DEFAULT_HTRIE_DEPTH 3   // How many "hash table" like levels to have
 #define DEFAULT_CHARR_SIZE  1   // The initial size of the array
 
+#define SHM_NAME            "tried"     // "trie daemon"
+#define SHM_NAME_LEN        sizeof(SHM_NAME)
+#define SEM_INIT_SEMAPHORE  1
 
