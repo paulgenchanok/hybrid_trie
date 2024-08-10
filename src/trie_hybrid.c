@@ -48,14 +48,14 @@ static void * check_alloc(void * p_mem, char * p_msg, bool b_hard_fail)
 }
 
 
+// NOTE: Also inits globals. So really, only have one hybrid trie.
+//
 htrie_t * htrie_create()
 {
 
     htrie_t * p_new = calloc(1, sizeof(htrie_t));
     check_alloc(p_new, "htrie create", true);
 
-    // p_root could be a void pointer and then have a type flag
-    //
     p_new->p_root = htrie_create_dnode(); 
     gp_recommends = rec_array_create();
 
