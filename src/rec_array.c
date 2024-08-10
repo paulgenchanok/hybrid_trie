@@ -183,3 +183,18 @@ void rec_array_print(rec_array_t * p_rat)
     move(row, col);
 
 }
+
+void rec_array_copy_word(word_t * p_dst, word_t * p_src)
+{
+    if ((NULL == p_src) || (p_dst))
+    {
+        return;
+    }
+
+    // WARNING: This ONLY words because word_t has no pointers.
+    // this is an immediate shallow copy. If word_t is updated
+    // to have pointers then this will cause big problems
+    //
+    memcpy(p_dst, p_src, sizeof(word_t));
+
+}

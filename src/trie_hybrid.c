@@ -18,7 +18,15 @@
 #include <time.h>
 #include "../include/trie_hybrid.h"
 
-rec_array_t * gp_recommends = NULL;
+
+// Define and init globals.
+//
+rec_array_t * gp_recommends           = NULL;
+char          g_word[MAX_WORD_LENGTH] = {0};
+uint8_t       g_word_len              = 0;
+void        * gp_curr                 = NULL;
+bool          gb_found                = true;
+
 
 /*!
  * @brief Checks if memory allocation is successful. This can be applied
@@ -52,7 +60,6 @@ htrie_t * htrie_create()
     // p_root could be a void pointer and then have a type flag
     //
     p_new->p_root = htrie_create_dnode(); 
-
     gp_recommends = rec_array_create();
 
     return p_new;
@@ -773,6 +780,37 @@ void htrie_update_node_popularity(void * p_node, uint8_t depth)
     }
 }
 
+
+rec_array_t * htrie_get_recs()
+{
+    return gp_recommends;
+}
+
+int8_t htrie_get_recs_copy(rec_array_t * p_recs)
+{
+    if (NULL == p_recs)
+    {
+        return -1;
+    }
+
+    // Assuming they're the same size ... maybe not the best assumption?
+    // Since everything is compile time constants this could be a giant
+    // memcpy mash too.
+    p_recs->num_words      = gp_recommends->num_words;
+    p_recs->min_popularity = gp_recommends->min_popularity;
+
+    for (uint8_t ind = 0; ind < gp_recommends->num_words; ind++)
+    {
+        rec_array_copy_word(&p_recs->word_array[ind], \
+            &gp_recommends->word_array[ind]);
+    }
+
+    return 0;
+
+}
+
+
+
 static void htrie_clear_rec_line()
 {
     int row = 0;
@@ -906,70 +944,86 @@ void htrie_autotyper(htrie_t * p_htrie)
 
 }
 
-// void * htrie_charloop(void * p_curr, char letter, \
-//     char word_buff[], uint8_t len, bool * bp_found)
-// {
 
-//         if ((' ' == letter) || ('\n') == letter)
-//         {
-//             word_buff[len] = '\0';
+int8_t htrie_put_letter(htrie_t * p_htrie, uint8_t letter)
+{
+    // TODO: Some input checking for letter here.
+    //
+    if (NULL == p_htrie)
+    {
+        return PUT_ERROR; // TODO: constants
+    }
 
-//             if (false == *bp_found)
-//             {
-//                 htrie_insert(p_htrie, word_buff);
-//             }
+    uint8_t ret = PUT_CONT_FOUND; // Default.
 
-//             else 
-//             {
-//                 htrie_update_node_popularity(p_curr, len);
-//             }
+    if ((' ' == letter) || ('\n' == letter))
+    {
+        g_word[g_word_len] = '\0';
+    
 
-//             // Reset for next go around
-//             //
-//             len = 0;
-//             b_found = true;
-//             p_curr = p_htrie->p_root;
+        if (false == gb_found)
+        {
+            htrie_insert(p_htrie, g_word);
+            ret = PUT_EOW_INSERT;
+        }
 
-//             htrie_render(gp_recommends, CLEAR);
-//         }
+        else 
+        {
+            htrie_update_node_popularity(gp_curr, g_word_len);
+            ret = PUT_EOW_UPDATE;
+        }
 
-//         if (true == b_found)
-//         {
+        // Reset globals for next word
+        //
+        g_word_len = 0;
+        gb_found   = true;
+        gp_curr    = p_htrie->p_root;
 
-//             p_curr = htrie_node_get_next(p_curr,   \
-//                                         letter,     \
-//                                         word_buff,  \
-//                                         len,        \
-//                                         DEFAULT_MAX_DEPTH);
+        return ret;
 
-//             if (NULL == p_curr)
-//             {
+    }
 
-//                 htrie_render(gp_recommends, CLEAR_LINE);
+    //TODO: Simplify this
+    //
+    if (true == gb_found)
+    {
+        gp_curr = htrie_node_get_next(gp_curr,  \
+                                    letter,     \
+                                    g_word,     \
+                                    g_word_len, \
+                                    DEFAULT_MAX_DEPTH);
 
-//                 b_found = false;
-//                 word_buff[len] = letter;
-//             }
+        g_word[g_word_len] = letter;
 
-//             else 
-//             {
-//                 // We need to print recommendations now.
-//                 //
-//                 word_buff[len] = letter;
-//                 rec_array_clear(gp_recommends);
-//                 htrie_fill_recs(p_curr, word_buff, len+1, DEFAULT_MAX_DEPTH);
+        if (NULL == gp_curr)
+        {
+            gb_found = false;
+            ret      = PUT_CONT_NOT_FOUND;
+        }
 
-//                 htrie_render(gp_recommends, PRINT);
-//             }
+        else 
+        {
+            rec_array_clear(gp_recommends);
+            htrie_fill_recs(gp_curr, g_word, g_word_len, DEFAULT_MAX_DEPTH);
+            ret = PUT_CONT_FOUND;
+        }
 
-//             len++;
-//         }
+        g_word_len++;
 
-//         else 
-//         {
-//             word_buff[len] = letter;
-//             len++;
-//         }
+    }
 
-// }
+    else 
+    {
+        // It's NOT Found.
+        //
+        g_word[g_word_len] = letter;
+        g_word_len++;
+        ret = PUT_CONT_NOT_FOUND;
+
+    }
+
+    return ret;
+
+}
+
 

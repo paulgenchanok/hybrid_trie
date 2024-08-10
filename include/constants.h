@@ -54,3 +54,10 @@
 #define SHM_NAME_LEN        sizeof(SHM_NAME)
 #define SEM_INIT_SEMAPHORE  1
 
+
+#define PUT_ERROR           -1
+#define PUT_EOW_INSERT      0x00
+#define PUT_EOW_UPDATE      0x01
+#define PUT_CONT_FOUND      0x10
+#define PUT_CONT_NOT_FOUND  0x11
+

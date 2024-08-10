@@ -40,3 +40,5 @@ void rec_array_dequeue(rec_array_t * p_rat, uint8_t index);
 void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity);
 
 void rec_array_print(rec_array_t * p_rat);
+
+void rec_array_copy_word(word_t * p_dst, word_t * p_src);
