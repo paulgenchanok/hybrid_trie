@@ -6,15 +6,12 @@
  * 
  */
 
-#include <curses.h>
 #include <stdbool.h>
 #include <stdbool.h>
-#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ncurses.h>
 #include <time.h>
 #include "../include/trie_hybrid.h"
 
@@ -61,6 +58,8 @@ htrie_t * htrie_create()
     //
     p_new->p_root = htrie_create_dnode(); 
     gp_recommends = rec_array_create();
+
+    gp_curr = p_new->p_root;
 
     return p_new;
 
@@ -210,8 +209,7 @@ static int8_t htrie_cnode_insert_worker(htrie_cnode_t * p_cnode, char * p_word)
 }
 
 
-
-int8_t htrie_insert(htrie_t * p_htrie, char * p_word)
+static int8_t htrie_insert(htrie_t * p_htrie, char * p_word)
 {
     if ((NULL == p_htrie) || (NULL == p_htrie->p_root) || (NULL == p_word))
     {
@@ -449,12 +447,12 @@ static void htrie_get_dnode_words(void * p_node,    \
         }
     }
 
-
-
 }
 
-
-int8_t htrie_get_words(htrie_t * p_htrie, char * p_prefix, uint8_t max_depth)
+// Only exists really for debugging purposes
+//
+static int8_t htrie_get_words(htrie_t * p_htrie, \
+    char * p_prefix, uint8_t max_depth)
 {
 
     if ((NULL == p_htrie) || (NULL == p_prefix))
@@ -576,10 +574,10 @@ int8_t htrie_get_words(htrie_t * p_htrie, char * p_prefix, uint8_t max_depth)
 // Do we add the word to the buffer before or after?
 // BEFORE. 
 
-void * htrie_node_get_next(htrie_dnode_t * p_curr, \
-                    char      next,                 \
-                    char    * p_prefix_buff,        \
-                    uint8_t   prefix_len,           \
+static void * htrie_node_get_next(htrie_dnode_t * p_curr,   \
+                    char      next,                         \
+                    char    * p_prefix_buff,                \
+                    uint8_t   prefix_len,                   \
                     uint8_t   max_depth)
 {
 
@@ -646,7 +644,7 @@ void * htrie_node_get_next(htrie_dnode_t * p_curr, \
 
 
 
-rec_array_t * htrie_fill_recs(void * p_curr, 
+static rec_array_t * htrie_fill_recs(void * p_curr, 
                             char * p_prefix, 
                             uint8_t prefix_len, 
                             uint8_t max_depth)
@@ -742,7 +740,7 @@ int8_t htrie_load_wordlist(htrie_t * p_htrie, char * p_wordlist_path)
 
 }
 
-void htrie_update_node_popularity(void * p_node, uint8_t depth)
+static void htrie_update_node_popularity(void * p_node, uint8_t depth)
 {
     if (NULL == p_node)
     {
@@ -781,166 +779,20 @@ void htrie_update_node_popularity(void * p_node, uint8_t depth)
 }
 
 
-rec_array_t * htrie_get_recs()
+int8_t htrie_get_recs(rec_array_t * p_dst)
 {
-    return gp_recommends;
-}
-
-int8_t htrie_get_recs_copy(rec_array_t * p_recs)
-{
-    if (NULL == p_recs)
+    if (NULL == p_dst)
     {
         return -1;
     }
 
-    // Assuming they're the same size ... maybe not the best assumption?
-    // Since everything is compile time constants this could be a giant
-    // memcpy mash too.
-    p_recs->num_words      = gp_recommends->num_words;
-    p_recs->min_popularity = gp_recommends->min_popularity;
-
-    for (uint8_t ind = 0; ind < gp_recommends->num_words; ind++)
-    {
-        rec_array_copy_word(&p_recs->word_array[ind], \
-            &gp_recommends->word_array[ind]);
-    }
+    // WARNING: This ONLY works because rec_array_t has is of a static size.
+    // it has ZERO pointers. If rec_array_t is changed to have pointers
+    // then such a shallow memcpy will not work.
+    //
+    memcpy(p_dst, gp_recommends, sizeof(rec_array_t));
 
     return 0;
-
-}
-
-
-
-static void htrie_clear_rec_line()
-{
-    int row = 0;
-    int col = 0;
-
-    getyx(stdscr, row, col);
-    move(row + 1, 0);
-    clrtoeol();
-    move(row, col);
-
-}
-
-void htrie_render(rec_array_t * p_rat, htrie_render_action action)
-{
-    if (NULL == p_rat)
-    {
-        return;
-    }
-
-    switch (action) 
-    {
-        case PRINT:
-            rec_array_print(p_rat);
-        break;
-
-        case CLEAR:
-            rec_array_clear(p_rat);
-            htrie_clear_rec_line();
-        break;
-
-        case CLEAR_LINE:
-            htrie_clear_rec_line();
-        break;
-
-        default:
-        break;
-
-    }
-}
-
-// Autotyper to read from stdin
-// Really need to separate to two functions. An autotyper and a renderer
-//
-void htrie_autotyper(htrie_t * p_htrie)
-{
-
-    if ((NULL == p_htrie) || (NULL == p_htrie->p_root))
-    {
-        return;
-    }
-
-    char word_buff[MAX_WORD_LENGTH] = {0};
-
-    uint8_t len      = 0;
-    char    letter   = '\0';
-    void  * p_curr   = p_htrie->p_root;
-    bool    b_found  = true;
-
-    initscr();
-
-    while (true) 
-    {
-        
-        letter = getch();
-
-        if ((' ' == letter) || ('\n') == letter)
-        {
-            word_buff[len] = '\0';
-
-            if (false == b_found)
-            {
-                htrie_insert(p_htrie, word_buff);
-            }
-
-            else 
-            {
-                htrie_update_node_popularity(p_curr, len);
-            }
-
-            // Reset for next go around
-            //
-            len = 0;
-            b_found = true;
-            p_curr = p_htrie->p_root;
-
-            htrie_render(gp_recommends, CLEAR);
-            continue;
-        }
-
-        if (true == b_found)
-        {
-
-            p_curr = htrie_node_get_next(p_curr,   \
-                                        letter,     \
-                                        word_buff,  \
-                                        len,        \
-                                        DEFAULT_MAX_DEPTH);
-
-            if (NULL == p_curr)
-            {
-
-                htrie_render(gp_recommends, CLEAR_LINE);
-
-                b_found = false;
-                word_buff[len] = letter;
-            }
-
-            else 
-            {
-                // We need to print recommendations now.
-                //
-                word_buff[len] = letter;
-                rec_array_clear(gp_recommends);
-                htrie_fill_recs(p_curr, word_buff, len+1, DEFAULT_MAX_DEPTH);
-
-                htrie_render(gp_recommends, PRINT);
-            }
-
-            len++;
-        }
-
-        else 
-        {
-            word_buff[len] = letter;
-            len++;
-        }
-
-    }
-
-    endwin();
 
 }
 
@@ -959,7 +811,6 @@ int8_t htrie_put_letter(htrie_t * p_htrie, uint8_t letter)
     if ((' ' == letter) || ('\n' == letter))
     {
         g_word[g_word_len] = '\0';
-    
 
         if (false == gb_found)
         {
@@ -994,11 +845,12 @@ int8_t htrie_put_letter(htrie_t * p_htrie, uint8_t letter)
                                     DEFAULT_MAX_DEPTH);
 
         g_word[g_word_len] = letter;
+        g_word_len++;
 
         if (NULL == gp_curr)
         {
             gb_found = false;
-            ret      = PUT_CONT_NOT_FOUND;
+            ret      = PUT_CONT_NF_INIT;
         }
 
         else 
@@ -1008,8 +860,6 @@ int8_t htrie_put_letter(htrie_t * p_htrie, uint8_t letter)
             ret = PUT_CONT_FOUND;
         }
 
-        g_word_len++;
-
     }
 
     else 
@@ -1018,7 +868,7 @@ int8_t htrie_put_letter(htrie_t * p_htrie, uint8_t letter)
         //
         g_word[g_word_len] = letter;
         g_word_len++;
-        ret = PUT_CONT_NOT_FOUND;
+        ret = PUT_CONT_NF_CONT;
 
     }
 

@@ -12,7 +12,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <ncurses.h>
 #include <sys/types.h>
 #include "../include/rec_array.h"
 
@@ -117,7 +116,7 @@ void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity)
     uint8_t ind      = 0;
     bool    b_hit    = false;
 
-    word_t * p_curr = NULL; // maybe should be a pointer? I'll know when it segfaults.
+    word_t * p_curr = NULL;
 
     for (; ind < NUM_RECOMMENDS; ind++)
     {
@@ -158,43 +157,5 @@ void rec_array_insert(rec_array_t * p_rat, char * p_word, float popularity)
         p_curr->popularity = popularity;
         p_curr->word_len = word_len;
     }    
-
-}
-
-void rec_array_print(rec_array_t * p_rat)
-{
-    if (NULL == p_rat)
-    {
-        return;
-    }
-
-    int row = 0;
-    int col = 0;
-
-    getyx(stdscr, row, col);
-    move(row + 1, 0);
-    clrtoeol();
-
-    for (uint8_t ind = 0; ind < p_rat->num_words; ind++)
-    {
-        printw("%s ", p_rat->word_array[ind].word);
-    }
-
-    move(row, col);
-
-}
-
-void rec_array_copy_word(word_t * p_dst, word_t * p_src)
-{
-    if ((NULL == p_src) || (p_dst))
-    {
-        return;
-    }
-
-    // WARNING: This ONLY words because word_t has no pointers.
-    // this is an immediate shallow copy. If word_t is updated
-    // to have pointers then this will cause big problems
-    //
-    memcpy(p_dst, p_src, sizeof(word_t));
 
 }

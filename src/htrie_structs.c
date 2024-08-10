@@ -7,7 +7,6 @@
  */
 
 #include <stdlib.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "../include/htrie_structs.h"

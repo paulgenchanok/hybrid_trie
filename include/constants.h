@@ -59,5 +59,6 @@
 #define PUT_EOW_INSERT      0x00
 #define PUT_EOW_UPDATE      0x01
 #define PUT_CONT_FOUND      0x10
-#define PUT_CONT_NOT_FOUND  0x11
+#define PUT_CONT_NF_INIT    0x11 // First time it's not found
+#define PUT_CONT_NF_CONT    0x12 // All other times.
 
