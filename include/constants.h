@@ -48,11 +48,6 @@
 
 #define DEFAULT_MAX_DEPTH   5   // How far to go from prefix to fetch recs
 #define DEFAULT_HTRIE_DEPTH 3   // How many "hash table" like levels to have
-#define DEFAULT_CHARR_SIZE  1   // The initial size of the array
-
-#define SHM_NAME            "tried"     // "trie daemon"
-#define SHM_NAME_LEN        sizeof(SHM_NAME)
-#define SEM_INIT_SEMAPHORE  1
 
 
 #define PUT_ERROR           -1
