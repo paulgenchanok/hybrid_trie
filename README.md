@@ -2,6 +2,8 @@
 
 An attempt to implement a somewhat memory / CPU efficient autocomplete program that can actually autocomplete an email. Still a work in progress.
 
+[trie_hybrid.h](include/trie_hybrid.h) has what API there is. This implementation makes most sense mashed direclty a keyboard implementation rather than an OS service or process. The process is basically to allocate the hybrid trie structure, load a wordlist, hook whenever the user enters a character to run it  through the trie, fetch recommendations / print / handle how you like, and then destroy the trie once done. See [main.c](src/main.c) for an example implementation that uses ncurses.
+
 ## Initial methods
 
 There are two extremes in implementing tries. The first extreme is that each node has a static array of pointers to the next node. The index of each pointer in that array represents a node associated with an ASCII character. The data structure for a node looks something like this:
